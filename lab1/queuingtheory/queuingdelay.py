@@ -50,9 +50,10 @@ if __name__ == '__main__':
     n2.add_protocol(protocol="delay",handler=d)
 
     # setup packet generator
+    load_scale = 0.8
     max_rate = 1000000/(1000*8)
-    load = 0.98*max_rate
-    g = Generator(node=n1, load=load,duration=10)
+    load = load_scale*max_rate
+    g = Generator(node=n1, load=load,duration=30)
     Sim.scheduler.add(delay=0, event='generate', handler=g.handle)
     
     # run the simulation

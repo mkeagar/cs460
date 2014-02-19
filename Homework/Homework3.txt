@@ -1,0 +1,36 @@
+Mike Eagar
+CS 460
+2-13-14
+
+P4, P13, P14, P24, P40, P41, P54
+
+HW: Transport Layer
+
+P4] a) ones (01011100 + 01100101) = 00111110
+	b) ones (11011010 + 01100101) = 11000000
+	c) Flip the last bit in each of the bytes and the ones complement will remain the same, because the sum remains the same: ones (01011101 + 01100100) = 00111110
+
+P13] See attached diagram page.  If the network connection can reorder messages, then alternating-bit protocol won't work correctly because the data stream will end up corrupted.  Sender may start out sending packet 0, and receive ACK 0 from the receiver, then send packet 1, which for some reason ends up taking a lot longer than standard, so sender times out and sends it again. Receiver sends ACK for the second packet 1, and then sender sends next packet 0, receives ACK 0 from receiver and sends next packet 1, which gets lost. At this time, slow packet 1 arrives at receiver, so ACK 1 is sent, and the sender incorrectly sends next packet 0 thinking no packet was lost.
+
+P14] I don't think a NAK-only protocol would be preferable to the ACK protocol in the case of a sender only sending infrequently, as it doesn't seem to offer any benefit toward reducing transfer time.  In the case where the sender has a lot of data to send and the network experiences few losses, the NAK-only protocol would be preferable, as the sender does not have to wait between sending new packets, and only resends if the receiver sends an NAK that a packet was missed, thereby reducing total transfer time.
+
+P24] a) True, because of packet reordering in the connection (in the case that it's a network), old copies of an acknowledgment numbered "x" can appear even if "x" does not appear in the sender's window.
+	 b) False, because with GBN, the window cannot move forward until an ACK has been received for the oldest packet sent.
+	 c) True, because with SR, the window won't move forward until an ACK is received for the the last packet sent
+	 d) True, because with GBN, the window won't move forward until an ACK is received for the oldest packet sent.
+
+P40] a) Slow start is operating between intervals 1-6, and 23-26. This is because the graph shows the sending rate doubling every transmission round.
+	 b) Congestion avoidance is operating between intervals 6-16. This is because the graph shows the sending rate only increasing by one each round.
+	 c) After 16th transmission round segment loss is detected by triple duplicate ACK because cwnd did not drop to 1, so must be based on the new ssthresh of previous cwnd/2.
+	 d) After the 22nd transmission round segment loss is detected by timeout because cwnd drops all the way to 1.
+	 e) The initial value of ssthresh is between 17 and 32 KB inclusive at the first transmission round (according to the plot) because at 32 KB we no longer are doubling the send rate at each round, and instead are increasing by one (congestion avoidance).
+	 f) At the 18th transmission round the value of ssthresh is 21 KB, because this is 1/2 of where the cwnd was previously before the drop where we entered fast recovery.
+	 g) At the 24th transmission round the value of ssthresh is 14KB because this is 1/2 of the cwnd we had reached in the fast recovery stage (29, but with int division, 1/2 is 14).
+	 h) The 70th segment is sent during the 7th transmission round because the sum of the segments sent is greater than 70 at this point.
+	 i) ssthresh will be 4 KB, and cwnd will be 7 KB, because leaving slow start due to a triple duplicate ACK leads to ssthresh being set to cwnd/2, and cwnd being set to the new ssthresh + 3.
+	 j) Using Tahoe, at the 19th round, ssthresh would be 21 KB, and cwnd would be 4 KB because there is no fast recovery state.
+	 h) 63 packets have been sent out in this scenario. At round 17 we send 1 packet, 2 more at 18, 4 more at 19, 8 more at 20, 16 more at 21, and 32 more at 22 for a total sum of 63 packets, assuming the packets do actually get sent out at round 22 before the timeout event occurs.
+
+P41] No, it would not converge to an equal share algorithm, as switching from AIMD to AIAD would result in the rate bouncing between the same two points. See second diagram on attached page.
+
+P54] Advantages of using the ssthresh and cwnd values from time t1 when starting to send data again at t2 are that the sender can start sending a larger amount of data without having to spin up through the slow start phase, and therefore can get through the new data it needs to send faster. Disadvantages are that the network condition has likely changed, and if there is a lot of congestion, there will be significantly larger data loss, requiring the retransmission of packets. An alternative could be that after a certain period of time, the sender could assume it would have received a triple duplicate ACK, and restart the sending of data at t2 in the fast recovery phase, to allow a better initial rate increase than slow start, with the possibility of dropping back to congestion avoidance, and then the multiplicative increase of slow start phase if no congestion is detected in the network.
