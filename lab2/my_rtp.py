@@ -18,7 +18,7 @@ class My_RTP(Connection):
 		self.timer = None
 		self.timeout = 1
 		self.max_sequence = math.pow(2,64)
-		self.window_size = 1
+		self.window_size = 3
 		self.window_start = 0
 		self.timer_set = False
 
@@ -37,12 +37,9 @@ class My_RTP(Connection):
 
 			if packet.sequence >= self.ack:
 				self.receive_buffer.append(packet)
-				self.receive_buffer = sorted(self.receive_buffer, key=lambda TCPPacket: TCPPacket.sequence)
 
-				packet_sequence = int(packet.sequence)
-				self_ack = int(self.ack)
-
-				if packet_sequence == self_ack:
+				if packet.sequence == self.ack:
+					self.receive_buffer = sorted(self.receive_buffer, key=lambda TCPPacket: TCPPacket.sequence)
 					while self.receive_buffer and (self.ack == self.receive_buffer[0].sequence):
 						pkt = self.receive_buffer.pop(0)
 						self.increment_ack(pkt.sequence + pkt.length)
@@ -56,24 +53,20 @@ class My_RTP(Connection):
 		self.send_buffer += data
 
 	def window_init(self):
-		self.send_if_possible()
+		for i in range(self.window_size):
+			self.send_if_possible()
 
 	def slide_window(self, ack_number):
-		# do stuff
 		packets_acked = int(math.ceil((ack_number - self.window_start)/self.mss))
 		self.packets_outstanding -= packets_acked
 		self.window_start = ack_number
-		for i in range(self.window_start - packets_acked):
+		for i in range(self.window_size - self.packets_outstanding):
 			self.send_if_possible()
 		self.cancel_timer()
 		if ack_number < len(self.send_buffer):
 			self.timer = Sim.scheduler.add(delay=self.timeout, event='retransmit', handler=self.retransmit)
 		else:
 			self.timer_set = False
-
-	def send(self,data):
-		self.send_buffer += data
-		self.send_if_possible()
 
 	def send_if_possible(self):
 		if self.packets_outstanding >= self.window_size:

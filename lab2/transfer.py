@@ -91,7 +91,6 @@ class Main(object):
                 if not data:
                     break
                 c1.load_buffer(data)
-                # Sim.scheduler.add(delay=0, event=data, handler=c1.send)
 
         c1.window_init()
 
