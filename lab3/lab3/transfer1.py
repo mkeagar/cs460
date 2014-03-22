@@ -5,7 +5,7 @@ from src.sim import Sim
 from src.node import Node
 from src.link import Link
 from src.transport import Transport
-from lab2.my_rtp import My_RTP
+from lab3.my_rtp import My_RTP
 
 import optparse
 import os
@@ -47,25 +47,19 @@ class Main(object):
                           default=None,
                           help="the size of the queue for the network link")
 
-        parser.add_option("-w","--window_size",type="int",dest="window_size",
-                          default=1,
-                          help="the size of the window for the My_RTP connection")
-
-
         (options,args) = parser.parse_args()
         self.filename = options.filename
         self.loss = options.loss
         self.queue_size = options.queue_size
-        self.window_size = options.window_size
 
     def diff(self):
-        args = ['diff','-u',self.filename,self.directory+'/'+self.filename]
+        args = ['diff','-u',self.filename,self.directory+'/1_1-'+self.filename]
         result = subprocess.Popen(args,stdout = subprocess.PIPE).communicate()[0]
         print
         if not result:
-            print "File transfer correct!"
+            print "File transfer 1 correct!"
         else:
-            print "File transfer failed. Here is the diff:"
+            print "File transfer 1 failed. Here is the diff:"
             print
             print result
 
@@ -77,7 +71,7 @@ class Main(object):
         # setup network
         n1 = Node()
         n2 = Node()
-        l = Link(address=1,startpoint=n1,endpoint=n2,queue_size=self.queue_size,bandwidth=10000000,propagation=0.01,loss=self.loss)
+        l = Link(address=1,startpoint=n1,endpoint=n2,queue_size=self.queue_size,bandwidth=10000000,propagation=0.01,loss=self.loss, printOut=True)
         n1.add_link(l)
         n1.add_forwarding_entry(address=2,link=l)
         l = Link(address=2,startpoint=n2,endpoint=n1,queue_size=self.queue_size,bandwidth=10000000,propagation=0.01,loss=self.loss)
@@ -89,7 +83,7 @@ class Main(object):
         t2 = Transport(n2)
 
         # setup application
-        a = AppHandler(self.filename)
+        a = AppHandler("1_1-" + self.filename)
 
         # setup connection
         c1 = My_RTP(t1,1,1,2,1,a)
@@ -103,10 +97,18 @@ class Main(object):
                     break
                 c1.load_buffer(data)
 
-        c1.window_init(self.window_size)
+        c1.set_file_prefix("1_1")
+        c2.set_file_prefix("1_1")
+        
+        c1.open_window_file()
+
+        Sim.scheduler.add(delay=0, event="window_init", handler=c1.window_init)
 
         # run the simulation
         Sim.scheduler.run()
+        n1.links[0].myfile.close()
+        c1.close_window_file()
+        Sim.close_rate_file()
 
 if __name__ == '__main__':
     m = Main()

@@ -11,7 +11,7 @@ class My_RTP(Connection):
 							destination_address,destination_port,app)
 		self.send_buffer = ''
 		self.receive_buffer = []
-		self.packets_outstanding = 0
+		self.bytes_outstanding = 0
 		self.mss = 1000
 		self.sequence = 0
 		self.ack = 0
@@ -24,10 +24,11 @@ class My_RTP(Connection):
 		self.queueing_delay = 0
 		self.pkt_q_delay_threshold = 0.0000000001
 		self.pkts_rcvd = 0
+		self.ssthresh = 100000
 
 	def handle_packet(self,packet):
 		# handle ACK
-		if packet.ack_number > self.window_start and packet.ack_number <= self.sequence:
+		if packet.ack_number > self.window_start and packet.ack_number <= len(self.send_buffer):
 			# this acks new data, so advance the window with slide_window()
 			Sim.trace("%d received My_RTP ACK from %d for %d" % (packet.destination_address,packet.source_address,packet.ack_number))
 			self.slide_window(packet.ack_number)
@@ -63,16 +64,20 @@ class My_RTP(Connection):
 	def load_buffer(self, data):
 		self.send_buffer += data
 
-	def window_init(self, window_size):
-		self.window_size = window_size
-		for i in range(self.window_size):
+	def window_init(self):
+		for i in range(math.ceil(self.window_size / self.mss)):
 			self.send_if_possible()
 
 	def slide_window(self, ack_number):
-		packets_acked = int(math.ceil((ack_number - self.window_start)/self.mss))
-		self.packets_outstanding -= packets_acked
+		bytes_acked = ack_number - self.window_start
+		self.bytes_outstanding -= bytes_acked
 		self.window_start = ack_number
-		for i in range(self.window_size - self.packets_outstanding):
+		if self.windows_size < self.ssthresh:
+			self.window_size += bytes_acked
+		else:
+			self.window_size += math.ceil(self.mss * bytes_acked / self.window_size) # check this when running program
+
+		for i in range(math.ceil(self.window_size - self.bytes_outstanding) / self.mss):
 			self.send_if_possible()
 		self.cancel_timer()
 		if ack_number < len(self.send_buffer):
@@ -81,20 +86,27 @@ class My_RTP(Connection):
 			self.timer_set = False
 
 	def send_if_possible(self):
-		if self.packets_outstanding >= self.window_size:
+		if self.bytes_outstanding >= self.window_size:
 			return
-		self.packets_outstanding += 1
 		packet = self.send_one_packet(self.sequence)
 		if packet:
 			self.increment_sequence(packet.length)
 
 	def send_one_packet(self, sequence):
+		num_bytes = 0
 		if sequence >= len(self.send_buffer):
 			return
 		if sequence + self.mss > len(self.send_buffer):
+			num_bytes = len(self.send_buffer) - sequence
 			body = self.send_buffer[sequence : ]
+		elif sequence + self.mss > self.window_start + self.window_size: 
+			num_bytes = self.window_start + self.window_size - sequence
+			body = self.send_buffer[sequence : sequence + bytes_to_send]
 		else:
 			body = self.send_buffer[sequence : sequence + self.mss]
+			num_bytes = self.mss
+
+		self.bytes_outstanding += num_bytes
 
 		# get one packet worth of data
 		packet = TCPPacket(source_address=self.source_address,
@@ -137,8 +149,12 @@ class My_RTP(Connection):
 
 	def retransmit(self,event):
 		self.timer_set = False
-		if self.packets_outstanding <= 0:
+		if self.bytes_outstanding <= 0:
 			return
+
+		self.ssthresh = max(math.ceil(self.window_size / 2), self.mss)
+		self.window_size = self.mss
+
 		Sim.trace("%d retransmission timer fired" % (self.source_address))
 		packet = self.send_one_packet(self.window_start)
 
