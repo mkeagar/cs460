@@ -40,7 +40,7 @@ class My_RTP(Connection):
 
 	def handle_packet(self,packet):
 		# handle ACK
-		if packet.ack_number > self.window_start:
+		if packet.length == 0:
 
 			# this acks new data, so advance the window with slide_window()
 			Sim.trace("%d received My_RTP ACK from %d for %d" % (packet.destination_address,packet.source_address,packet.ack_number))

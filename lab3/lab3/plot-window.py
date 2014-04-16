@@ -58,7 +58,7 @@ class Plotter:
         xlabel('Time (seconds)')
         ylabel('Window Size (packets)')
         xlim([-0.001,self.max_time])
-        ylim([-0.001,max_queue+2])
+        ylim([-0.001,max_queue+20])
         savefig('window.png')
 
 def parse_options():
