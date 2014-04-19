@@ -1,0 +1,56 @@
+\documentclass[11pt]{article}
+
+\usepackage[letterpaper,margin=0.75in]{geometry}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{fixltx2e}
+\usepackage{verbatim}
+\usepackage{color}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+\definecolor{orange}{RGB}{255,119,0}
+\definecolor{purple2}{RGB}{153,0,153}
+
+\setlength{\parindent}{1.4em}
+
+\begin{document}
+
+\lstset{
+  language=Python,
+  basicstyle=\small\ttfamily, % print whole listing small
+  keywordstyle=\color{orange},
+  keywordstyle={[2]\color{purple2}},
+  identifierstyle=,           % nothing happens
+  commentstyle=\color{dkgreen},% green comments
+  stringstyle=\ttfamily\color{mauve},      % typewriter type for strings
+  showstringspaces=false,     % no special string spaces
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  numbersep=5pt,
+  frame=tb,
+}
+
+\title{CS460 Lab 4 Report: Routing}
+
+\author{Michael K. Eagar}
+
+\date{April 18th, 2014}
+
+\maketitle
+
+\section{Routing Protocol Implementation}
+
+I did not fully complete this lab. However, I did get routing to work partially. My implementation of distance vector routing only works successfully if every node in the network is connected directly to every other node in the network---if each node is a neighbor to every other node. But the network can consist any number of nodes. My implementation is saved in the file \textit{test\_routingApp.py}.
+
+In my implementation, I use the file \textit{five-nodes-mesh.txt} saved in the \textbf{networks} directory to create a network consisting of five nodes, in which every node is linked directly to every other node. I then demonstrate that every node is reachable by every other node by sending one packet from each node to all of its neighbors. At the end of the implementation I also print out the distance vector table for each node to show that it is correct for the network. I tested it on completely connected mesh networks of sizes 2, 3, 4, 5, and 6, and it worked successfully for those as well.
+
+My implementation of distance vector routing really takes place in the \textbf{RoutingApp} class within the \textit{test\_routingApp.py} file.  The methods \textit{updateDVTable()}, \textit{addDVToTable()}, and \textit{sendDVTable()} make up my implementation. I also modified \textit{src/packet.py} and changed the \textbf{Packet} class to include an \textbf{orig\_host} variable, in order to get my implementation to work. Here are the distance vector routing methods that make up my implementation:
+\lstinputlisting[breaklines = true, firstline = 26, lastline = 60, caption = Distance Vector Routing implmentation]{./test_routingApp.py}
+\vspace{0.25cm}
+
+I feel that if I had been able to get started on the lab earlier (before the last week of class) I would have been able to finish it completely. I do think that I would need to redo my implementation completely in order to get routing to work correctly on any network arrangement, as it breaks down fairly quickly when each node is not a neighbor to the others.
+
+\end{document}

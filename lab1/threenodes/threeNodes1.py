@@ -19,9 +19,9 @@ if __name__ == '__main__':
     Sim.scheduler.reset()
 
     # setup network
-    n1 = node.Node()
-    n2 = node.Node()
-    n3 = node.Node()
+    n1 = node.Node("n1")
+    n2 = node.Node("n2")
+    n3 = node.Node("n3")
     # create link from 1 to 2
     l = link.Link(address=1,startpoint=n1,endpoint=n2,bandwidth=1000000.0,propagation=0.1)
     n1.add_link(l)
